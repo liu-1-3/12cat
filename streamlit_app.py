@@ -1,23 +1,15 @@
 import streamlit as st
 import pandas as pd
-import streamlit as st
 from PIL import Image
-from fastai.vision.all import *
-from fastai.tabular.all import *
 import torch
-import fastcore
-import fasttransform
-import asyncio
-import nest_asyncio
-nest_asyncio.apply()
+import os
 import warnings
 warnings.filterwarnings('ignore', category=UserWarning)
-
 
 # 设置页面标题
 st.title("🐱 识别与推荐系统")
 
-# 在文件开头添加以下CSS样式
+# 设置自定义字体
 st.markdown(
     """
     <style>
@@ -29,27 +21,32 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
-
 # 读取数据
 @st.cache_data
 def load_data():
-    nature_df = pd.read_excel('cat性格矩阵.xlsx')
-    cats_df = pd.read_excel('cats.xlsx')
-    merged_df = pd.merge(nature_df, cats_df, on='cat_id', how='left', suffixes=('_nature', '_cats'))
-    merged_df['cat'] = merged_df['cat_cats']
-    merged_df.drop(['cat_nature', 'cat_cats'], axis=1, inplace=True, errors='ignore')
-    
-    # 处理性格矩阵
-    all_natures = ['粘人', '独立', '好动', '安静', '好奇心强', '好奇心弱', '易训练', '难训练', 
-                  '梳理需求高', '梳理需求低','长毛','短毛','无毛','亲人程度高','亲人程度低']
-    for nature in all_natures:
-        merged_df[nature] = merged_df[nature].apply(lambda x: 1 if pd.notna(x) and x != 0 else 0)
-    
-    return merged_df
+    try:
+        nature_df = pd.read_excel('cat性格矩阵.xlsx')
+        cats_df = pd.read_excel('cats.xlsx')
+        merged_df = pd.merge(nature_df, cats_df, on='cat_id', how='left', suffixes=('_nature', '_cats'))
+        merged_df['cat'] = merged_df['cat_cats']
+        merged_df.drop(['cat_nature', 'cat_cats'], axis=1, inplace=True, errors='ignore')
+        
+        # 处理性格矩阵
+        all_natures = ['粘人', '独立', '好动', '安静', '好奇心强', '好奇心弱', '易训练', '难训练', 
+                      '梳理需求高', '梳理需求低', '长毛', '短毛', '无毛', '亲人程度高', '亲人程度低']
+        for nature in all_natures:
+            merged_df[nature] = merged_df[nature].apply(lambda x: 1 if pd.notna(x) and x != 0 else 0)
+        
+        return merged_df
+    except Exception as e:
+        st.error(f"加载数据时出错: {str(e)}")
+        return pd.DataFrame()
 
 # 推荐函数
 def recommend_cats(user_prefs, merged_df):
+    if merged_df.empty:
+        return []
+    
     merged_df['match_score'] = merged_df.apply(
         lambda row: sum(row[pref] * user_prefs[pref] for pref in user_prefs),
         axis=1
@@ -71,6 +68,16 @@ def recommend_cats(user_prefs, merged_df):
     
     return results
 
+# 加载模型函数
+def load_cat_model():
+    try:
+        # 仅在需要时导入fastai
+        from fastai.vision.all import load_learner
+        return load_learner('12cat_model.pkl')
+    except Exception as e:
+        st.error(f"加载模型时出错: {str(e)}")
+        return None
+
 # 主程序
 merged_df = load_data()
 
@@ -91,21 +98,23 @@ with tab1:
         st.image(img, caption="您上传的图片", use_container_width=True)
         
         try:
-            # 加载模型
-            learn = load_learner('12cat_model.pkl')
+            # 仅在需要时加载模型
+            learn = load_cat_model()
             
-            # 进行预测
-            pred, _, probs = learn.predict(img)
-            
-            # 显示结果
-            st.success(f'识别结果: {pred}')
-            
-            # 显示概率(可选)
-            with st.expander("查看详细概率"):
-                st.write("各品种概率:")
-                for i, (cat, prob) in enumerate(zip(learn.dls.vocab, probs)):
-                    st.write(f"{cat}: {prob*100:.2f}%")
-                    
+            if learn:
+                # 进行预测
+                pred, _, probs = learn.predict(img)
+                
+                # 显示结果
+                st.success(f'识别结果: {pred}')
+                
+                # 显示概率(可选)
+                with st.expander("查看详细概率"):
+                    st.write("各品种概率:")
+                    for i, (cat, prob) in enumerate(zip(learn.dls.vocab, probs)):
+                        st.write(f"{cat}: {prob*100:.2f}%")
+            else:
+                st.error("无法加载模型，请检查模型文件是否存在")
         except Exception as e:
             st.error(f"识别时出错: {str(e)}")
             st.info("请确保模型文件存在且格式正确")
