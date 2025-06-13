@@ -4,11 +4,15 @@ import streamlit as st
 from PIL import Image
 from fastai.vision.all import *
 from fastai.tabular.all import *
+import torch
+import fastcore
+import fasttransform
 import asyncio
 import nest_asyncio
 nest_asyncio.apply()
 import warnings
 warnings.filterwarnings('ignore', category=UserWarning)
+
 
 # 设置页面标题
 st.title("🐱 识别与推荐系统")
