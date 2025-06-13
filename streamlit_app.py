@@ -25,9 +25,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# 禁用自动重新加载
-st.experimental_memo.clear()
-st.experimental_singleton.clear()
+
 
 # 读取数据
 @st.cache_data
