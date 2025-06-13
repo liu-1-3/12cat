@@ -1,15 +1,2 @@
 [server]
-headless = true
-port = $PORT
-enableCORS = false
-
-[runner]
-magicEnabled = false
-watchDirectories = ["."]
-watchFiles = []
-watchIgnoreRegexes = [
-    ".*fastcore.*",
-    ".*torch.*",
-    ".*fasttransform.*"
-]
-    
+enableWatchdog = false
