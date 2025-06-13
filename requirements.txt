@@ -5,3 +5,4 @@ streamlit
 nest_asyncio
 pandas
 Pillow
+openpyxl
