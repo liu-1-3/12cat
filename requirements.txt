@@ -3,3 +3,5 @@ torchvision==0.17.0
 fastai==2.8.2
 streamlit
 nest_asyncio
+pandas
+Pillow
