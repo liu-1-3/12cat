@@ -1,5 +1,5 @@
 torch==2.7.1
-torchvision==0.17.0
+torchvision==0.22.1
 fastai==2.8.2
 streamlit
 nest_asyncio
